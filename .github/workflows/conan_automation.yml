@@ -1,0 +1,45 @@
+name: Detective Conan Saturday Automation
+
+on:
+  schedule:
+    # Run at 11:00 UTC (7:00 AM EDT) every Saturday
+    - cron: '0 11 * * 6'
+  workflow_dispatch:
+
+jobs:
+  automate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg aria2 mktorrent
+          pip install playwright feedparser requests
+          playwright install chromium
+          playwright install-deps
+
+      - name: Wait until 7:31 AM EDT (11:31 UTC)
+        run: |
+          echo "Current time: $(date -u)"
+          TARGET_TIME=$(date -d "today 11:31" +%s)
+          CURRENT_TIME=$(date +%s)
+          SLEEP_SECONDS=$((TARGET_TIME - CURRENT_TIME))
+          if [ $SLEEP_SECONDS -gt 0 ]; then
+            echo "Sleeping for $SLEEP_SECONDS seconds until 7:31 AM EDT..."
+            sleep $SLEEP_SECONDS
+          fi
+          echo "Starting bot at: $(date -u)"
+
+      - name: Run automation bot
+        run: python conan_full_automation.py
+        env:
+          # You can move your API key to GitHub Secrets for better security
+          STREAMP2P_API_KEY: ${{ secrets.STREAMP2P_API_KEY || 'a7165e18e69dc32127258688' }}
